@@ -1,116 +1,83 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
 	"log"
-	"net/http"
+	"neko-bot/BOT"
 	"os"
-	"strings"
-	"sync"
+	"os/signal"
+	"syscall"
 
-	md "github.com/JohannesKaufmann/html-to-markdown"
-
-	"neko-bot/API"
+	discord "github.com/bwmarrin/discordgo"
+	env "github.com/joho/godotenv"
 )
 
-const baseURL = "https://hacker-news.firebaseio.com/v0/item/"
-const parentURL = "https://hacker-news.firebaseio.com/v0/item/31582796.json?print=pretty"
-const keySentence = "Haskell"
+func goDotEnvVariable(key string) string {
+
+	// load .env file
+	err := env.Load(".env")
+
+	if err != nil {
+		log.Fatalf("Error loading .env file")
+	}
+
+	return os.Getenv(key)
+}
 
 func main() {
-	post := queryParentAPI()
 
-	chAPI := make(chan int)
-	chTrs := make(chan API.HackerNewsContentChild, 25)
-	chStr := make(chan API.HackerNewsContentChild, 50)
-	doneStr := make(chan bool)
-	doneTrs := make(chan bool)
-	var wg sync.WaitGroup
+	token := goDotEnvVariable("TOKEN")
 
-	var childSelectedRes []API.HackerNewsContentChild
+	// Create a new Discord session using the provided bot token.
+	dg, err := discord.New("Bot " + token)
 
-	for i := 0; i < 20; i++ {
-		go func() {
-			wg.Add(1)
-			defer wg.Done()
-			fmt.Println("Waiting for ID")
-			for id := range chAPI {
-				chTrs <- queryChildAPI(id)
-			}
-		}()
+	if err != nil {
+		fmt.Println("error creating Discord session,", err)
+		return
 	}
 
-	go func() {
-		fmt.Println("Adding to storage")
-		for resp := range chStr {
-			childSelectedRes = append(childSelectedRes, resp)
+	// Register the messageCreate func as a callback for MessageCreate events.
+	dg.AddHandler(messageCreate)
+
+	// In this example, we only care about receiving message events.
+	dg.Identify.Intents = discord.IntentsGuildMessages
+
+	// Open a websocket connection to Discord and begin listening.
+	err = dg.Open()
+	if err != nil {
+		fmt.Println("error opening connection,", err)
+		return
+	}
+
+	// Wait here until CTRL-C or other term signal is received.
+	fmt.Println("Bot is now running.  Press CTRL-C to exit.")
+	sc := make(chan os.Signal, 1)
+	signal.Notify(sc, syscall.SIGINT, syscall.SIGTERM, os.Interrupt, os.Kill)
+	<-sc
+
+	// Cleanly close down the Discord session.
+	dg.Close()
+
+}
+
+func messageCreate(s *discord.Session, m *discord.MessageCreate) {
+
+	// Ignore all messages created by the bot itself
+	// This isn't required in this specific example but it's a good practice.
+	if m.Author.ID == s.State.User.ID {
+		return
+	}
+
+	// String manipulation: Slice string
+
+	// neko!jobs 3 Haskell
+
+	// If the message is "ping" reply with "Pong!"
+	if m.Content == "neko!jobs 3 Haskell" {
+		messages := BOT.HackerNewsJobs("Haskell", 3)
+		for i := 0; i < 3; i++ {
+			s.ChannelMessageSend(m.ChannelID, messages[i])
 		}
-		close(doneStr)
-	}()
-
-	go func() {
-		fmt.Println("Filtering and translating to Markdown")
-		for child := range chTrs {
-			if strings.Contains(child.Text, keySentence) {
-				child.Text = translateHTMLToMarkdown(child.Text)
-				chStr <- child
-			}
-		}
-		close(doneTrs)
-	}()
-
-	for _, id := range post.Kids {
-		chAPI <- id
 	}
 
-	close(chAPI)
-	wg.Wait()
-	close(chTrs)
-	<-doneTrs
-	close(chStr)
-	<-doneStr
-
-	file, _ := os.Create("dump.md")
-	for _, child := range childSelectedRes {
-		file.WriteString(child.Text)
-	}
-
-}
-
-func translateHTMLToMarkdown(html string) string {
-	converter := md.NewConverter("", true, nil)
-
-	markdown, err := converter.ConvertString(html)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	return markdown
-}
-
-func queryParentAPI() API.HackerNewsContentParent {
-	resp, err := http.Get(parentURL)
-
-	if err != nil {
-		log.Fatalln(err)
-	}
-
-	var response API.HackerNewsContentParent
-	json.NewDecoder(resp.Body).Decode(&response)
-	return response
-}
-
-func queryChildAPI(postId int) API.HackerNewsContentChild {
-	url := fmt.Sprintf("%s%d.json?print=pretty", baseURL, postId)
-
-	resp, err := http.Get(url)
-
-	if err != nil {
-		log.Fatalln(err)
-	}
-
-	var response API.HackerNewsContentChild
-	json.NewDecoder(resp.Body).Decode(&response)
-	return response
 }
