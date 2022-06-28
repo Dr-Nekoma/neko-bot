@@ -2,6 +2,7 @@ package BOT
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log"
 	"net/http"
@@ -13,20 +14,38 @@ import (
 	"neko-bot/API"
 )
 
-const baseURL = "https://hacker-news.firebaseio.com/v0/item/"
-const parentURL = baseURL + "31582796.json?print=pretty"
+const baseUserURL = "https://hacker-news.firebaseio.com/v0/user/"
+const profileId = "whoishiring"
+const baseItemURL = "https://hacker-news.firebaseio.com/v0/item/"
+const complementURL = ".json?print=pretty"
+const profileURL = baseUserURL + profileId + complementURL
+
+type id int
 
 func HackerNewsJobs(keySentence string, howMany int) []string {
-	post := queryParentAPI()
+	id, err := queryProfileAPI()
+
+	if err != nil {
+		log.Print(err)
+		return []string{err.Error()}
+	}
+
+	post, err := querySubmissionAPI(id)
+
+	if err != nil {
+		log.Print(err)
+		return []string{err.Error()}
+	}
 
 	chAPI := make(chan int)
-	chTrs := make(chan API.HackerNewsContentChild, 25)
-	chStr := make(chan API.HackerNewsContentChild, 50)
+	chTrs := make(chan API.HackerNewsContentComment, 25)
+	chStr := make(chan API.HackerNewsContentComment, 50)
 	doneStr := make(chan bool)
 	doneTrs := make(chan bool)
 	var wg sync.WaitGroup
 
 	var childSelectedRes []string
+	var messages []string
 
 	for i := 0; i < 20; i++ {
 		go func() {
@@ -34,7 +53,13 @@ func HackerNewsJobs(keySentence string, howMany int) []string {
 			defer wg.Done()
 			fmt.Println("Waiting for ID")
 			for id := range chAPI {
-				chTrs <- queryChildAPI(id)
+				comment, err := queryCommentAPI(id)
+				if err != nil {
+					log.Print(err)
+					messages = append(messages, err.Error())
+					break
+				}
+				chTrs <- comment
 			}
 		}()
 	}
@@ -50,7 +75,7 @@ func HackerNewsJobs(keySentence string, howMany int) []string {
 	go func() {
 		fmt.Println("Filtering and translating to Markdown")
 		for child := range chTrs {
-			if strings.Contains(child.Text, keySentence) {
+			if strings.Contains(strings.ToLower(child.Text), strings.ToLower(keySentence)) {
 				child.Text = translateHTMLToMarkdown(child.Text)
 				chStr <- child
 			}
@@ -84,28 +109,65 @@ func translateHTMLToMarkdown(html string) string {
 	return markdown
 }
 
-func queryParentAPI() API.HackerNewsContentParent {
-	resp, err := http.Get(parentURL)
+func queryProfileAPI() (id, error) {
+	resp, err := http.Get(profileURL)
 
 	if err != nil {
-		log.Fatalln(err)
+		log.Print(err)
+		return -1, errors.New("I couldn't reach profile data!")
 	}
 
-	var response API.HackerNewsContentParent
+	var response API.HackerNewsProfile
 	json.NewDecoder(resp.Body).Decode(&response)
-	return response
+
+	firstSubmission := -1
+	for _, submission := range response.Submitted {
+		potentialJobPost, err := querySubmissionAPI(id(submission))
+		if err != nil {
+			log.Print(err)
+			break
+		}
+		if strings.Contains(potentialJobPost.Title, "Who is hiring?") {
+			firstSubmission = submission
+			break
+		}
+	}
+
+	if firstSubmission == -1 {
+		return -1, errors.New("I couldn't find any posts for hiring!")
+	} else {
+		return id(firstSubmission), nil
+	}
 }
 
-func queryChildAPI(postId int) API.HackerNewsContentChild {
-	url := fmt.Sprintf("%s%d.json?print=pretty", baseURL, postId)
+func querySubmissionAPI(submissionId id) (API.HackerNewsContentSubmission, error) {
+	url := baseItemURL + fmt.Sprint(submissionId) + complementURL
+	log.Print(url)
+	resp, err := http.Get(url)
+
+	var response API.HackerNewsContentSubmission
+
+	if err != nil {
+		log.Print(err)
+		return response, errors.New("I couldn't reach submission data!")
+	}
+
+	json.NewDecoder(resp.Body).Decode(&response)
+	return response, nil
+}
+
+func queryCommentAPI(postId int) (API.HackerNewsContentComment, error) {
+	url := fmt.Sprintf("%s%d.json?print=pretty", baseItemURL, postId)
 
 	resp, err := http.Get(url)
 
+	var response API.HackerNewsContentComment
+
 	if err != nil {
-		log.Fatalln(err)
+		log.Print(err)
+		return response, errors.New("I couldn't reach comments data!")
 	}
 
-	var response API.HackerNewsContentChild
 	json.NewDecoder(resp.Body).Decode(&response)
-	return response
+	return response, nil
 }

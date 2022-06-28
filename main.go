@@ -68,16 +68,25 @@ func messageCreate(s *discord.Session, m *discord.MessageCreate) {
 		return
 	}
 
-	// String manipulation: Slice string
-
-	// neko!jobs 3 Haskell
-
-	// If the message is "ping" reply with "Pong!"
-	if m.Content == "neko!jobs 3 Haskell" {
-		messages := BOT.HackerNewsJobs("Haskell", 3)
-		for i := 0; i < 3; i++ {
-			s.ChannelMessageSend(m.ChannelID, messages[i])
-		}
+	messages := BOT.ParseCommand(m.Content)
+	for i := 0; i < len(messages); i++ {
+		s.ChannelMessageSendEmbed(m.ChannelID, jobMessage(messages[i]))
 	}
 
+}
+
+func jobMessage(descr string) *discord.MessageEmbed {
+	return &discord.MessageEmbed{
+		URL:   "https://news.ycombinator.com/submitted?id=whoishiring",
+		Title: "Job Hunting",
+		Type:  "article",
+		Color: 0x00acd7,
+		Footer: &discord.MessageEmbedFooter{
+			Text: "Made by Dr.Nekoma",
+		},
+		Image: &discord.MessageEmbedImage{
+			URL: "https://jayclouse.com/wp-content/uploads/2019/06/hacker_news-1000x525-1.jpg",
+		},
+		Description: descr,
+	}
 }
