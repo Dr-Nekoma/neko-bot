@@ -26,7 +26,10 @@ func goDotEnvVariable(key string) string {
 
 func main() {
 
-	token := goDotEnvVariable("TOKEN")
+	token := os.Getenv("TOKEN")
+	if token == "" {
+		token = goDotEnvVariable("TOKEN")
+	}
 
 	// Create a new Discord session using the provided bot token.
 	dg, err := discord.New("Bot " + token)
