@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"log"
 	"neko-bot/BOT"
+	"neko-bot/DB"
+	"neko-bot/MSG"
 	"os"
 	"os/signal"
 	"syscall"
@@ -24,15 +26,24 @@ func goDotEnvVariable(key string) string {
 	return os.Getenv(key)
 }
 
-func main() {
-
-	token := os.Getenv("TOKEN")
-	if token == "" {
-		token = goDotEnvVariable("TOKEN")
+func init() {
+	botToken = os.Getenv("TOKEN")
+	if botToken == "" {
+		botToken = goDotEnvVariable("TOKEN")
 	}
 
+	DB.ConnStr = os.Getenv("DATABASE_URL")
+	if DB.ConnStr == "" {
+		DB.ConnStr = goDotEnvVariable("URI")
+	}
+}
+
+var botToken string
+
+func main() {
+
 	// Create a new Discord session using the provided bot token.
-	dg, err := discord.New("Bot " + token)
+	dg, err := discord.New("Bot " + botToken)
 
 	if err != nil {
 		fmt.Println("error creating Discord session,", err)
@@ -71,25 +82,32 @@ func messageCreate(s *discord.Session, m *discord.MessageCreate) {
 		return
 	}
 
-	messages := BOT.ParseCommand(m.Content)
+	messages := BOT.ParseCommand(m.Content, m.Author.Username)
 	for i := 0; i < len(messages); i++ {
-		s.ChannelMessageSendEmbed(m.ChannelID, jobMessage(messages[i]))
+		message := messages[i]
+		switch message.Kind {
+		case MSG.Jobs:
+			s.ChannelMessageSendEmbed(m.ChannelID, MSG.JobMessage(messages[i].TitleLink, messages[i].Body))
+		case MSG.LackOfJobs:
+			s.ChannelMessageSendEmbed(m.ChannelID, MSG.LackOfJobsMessage())
+		case MSG.Project:
+			switch message.SubKind {
+			case MSG.ProjectAdd:
+				s.ChannelMessageSendEmbed(m.ChannelID, MSG.ProjectAddMessage(messages[i], m.Author.Username))
+			case MSG.ProjectList:
+				s.ChannelMessageSendEmbed(m.ChannelID, MSG.ProjectListMessage(messages[i]))
+			case MSG.ProjectEmptyList:
+				s.ChannelMessageSendEmbed(m.ChannelID, MSG.ProjectEmptyListMessage())
+			case MSG.ProjectDeleteId:
+				s.ChannelMessageSendEmbed(m.ChannelID, MSG.ProjectDeleteIdMessage(messages[i], m.Author.Username))
+			case MSG.ProjectDeleteIdea:
+				s.ChannelMessageSendEmbed(m.ChannelID, MSG.ProjectDeleteIdeaMessage(messages[i], m.Author.Username))
+			}
+		case MSG.Error:
+			s.ChannelMessageSendEmbed(m.ChannelID, MSG.ErrorMessage(messages[i].Body))
+		case MSG.Help:
+			s.ChannelMessageSendEmbed(m.ChannelID, MSG.HelpMessage(messages[i].Body))
+		}
 	}
 
-}
-
-func jobMessage(descr string) *discord.MessageEmbed {
-	return &discord.MessageEmbed{
-		URL:   "https://news.ycombinator.com/submitted?id=whoishiring",
-		Title: "Job Hunting",
-		Type:  "article",
-		Color: 0x00acd7,
-		Footer: &discord.MessageEmbedFooter{
-			Text: "Made by Dr.Nekoma",
-		},
-		Image: &discord.MessageEmbedImage{
-			URL: "https://jayclouse.com/wp-content/uploads/2019/06/hacker_news-1000x525-1.jpg",
-		},
-		Description: descr,
-	}
 }

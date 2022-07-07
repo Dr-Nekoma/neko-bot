@@ -8,44 +8,53 @@ import (
 	"net/http"
 	"strings"
 	"sync"
+	"sync/atomic"
 
 	md "github.com/JohannesKaufmann/html-to-markdown"
 
 	"neko-bot/API"
+	"neko-bot/MSG"
 )
 
 const baseUserURL = "https://hacker-news.firebaseio.com/v0/user/"
 const profileId = "whoishiring"
 const baseItemURL = "https://hacker-news.firebaseio.com/v0/item/"
 const complementURL = ".json?print=pretty"
+const commentURL = "https://news.ycombinator.com/item?id="
 const profileURL = baseUserURL + profileId + complementURL
 
 type id int
 
-func HackerNewsJobs(keySentence string, howMany int) []string {
+type comment struct {
+	body API.HackerNewsContentComment
+	url  string
+}
+
+func HackerNewsJobs(keySentence string, howMany int) []MSG.Message {
 	id, err := queryProfileAPI()
 
 	if err != nil {
 		log.Print(err)
-		return []string{err.Error()}
+		return []MSG.Message{{Body: err.Error(), Kind: "error"}}
 	}
 
 	post, err := querySubmissionAPI(id)
 
 	if err != nil {
 		log.Print(err)
-		return []string{err.Error()}
+		return []MSG.Message{{Body: err.Error(), Kind: "error"}}
 	}
 
 	chAPI := make(chan int)
-	chTrs := make(chan API.HackerNewsContentComment, 25)
-	chStr := make(chan API.HackerNewsContentComment, 50)
+	chTrs := make(chan comment, 25)
+	chStr := make(chan comment, 50)
 	doneStr := make(chan bool)
 	doneTrs := make(chan bool)
+	doneCnt := make(chan bool)
 	var wg sync.WaitGroup
 
-	var childSelectedRes []string
-	var messages []string
+	var childSelectedRes []MSG.Message
+	var requests uint64
 
 	for i := 0; i < 20; i++ {
 		go func() {
@@ -53,13 +62,16 @@ func HackerNewsJobs(keySentence string, howMany int) []string {
 			defer wg.Done()
 			fmt.Println("Waiting for ID")
 			for id := range chAPI {
-				comment, err := queryCommentAPI(id)
+				content, err := queryCommentAPI(id)
 				if err != nil {
 					log.Print(err)
-					messages = append(messages, err.Error())
-					break
+					return
 				}
-				chTrs <- comment
+				if atomic.LoadUint64(&requests) >= uint64(howMany) {
+					log.Print("I reached my limit!")
+					return
+				}
+				chTrs <- comment{body: content, url: commentURL + fmt.Sprint(id)}
 			}
 		}()
 	}
@@ -67,7 +79,7 @@ func HackerNewsJobs(keySentence string, howMany int) []string {
 	go func() {
 		fmt.Println("Adding to storage")
 		for resp := range chStr {
-			childSelectedRes = append(childSelectedRes, resp.Text)
+			childSelectedRes = append(childSelectedRes, MSG.Message{Body: resp.body.Text, TitleLink: resp.url, Kind: "jobs"})
 		}
 		close(doneStr)
 	}()
@@ -75,8 +87,13 @@ func HackerNewsJobs(keySentence string, howMany int) []string {
 	go func() {
 		fmt.Println("Filtering and translating to Markdown")
 		for child := range chTrs {
-			if strings.Contains(strings.ToLower(child.Text), strings.ToLower(keySentence)) {
-				child.Text = translateHTMLToMarkdown(child.Text)
+			if strings.Contains(strings.ToLower(child.body.Text), strings.ToLower(keySentence)) {
+				child.body.Text = translateHTMLToMarkdown(child.body.Text)
+				log.Print("Adding one to the counter!")
+				atomic.AddUint64(&requests, 1)
+				if atomic.LoadUint64(&requests) >= uint64(howMany) {
+					close(doneCnt)
+				}
 				chStr <- child
 			}
 		}
@@ -84,18 +101,27 @@ func HackerNewsJobs(keySentence string, howMany int) []string {
 	}()
 
 	for _, id := range post.Kids {
-		chAPI <- id
+		select {
+		case <-doneCnt:
+			break
+		case chAPI <- id:
+			fmt.Println("ID Sent!")
+		}
 	}
 
-	close(chAPI)
 	wg.Wait()
+	close(chAPI)
 	close(chTrs)
 	<-doneTrs
 	close(chStr)
 	<-doneStr
 
-	return childSelectedRes[:howMany]
-
+	fmt.Println(len(childSelectedRes))
+	if len(childSelectedRes) == 0 {
+		return []MSG.Message{{Kind: "lackOfJobs"}}
+	} else {
+		return childSelectedRes
+	}
 }
 
 func translateHTMLToMarkdown(html string) string {

@@ -3,6 +3,8 @@ package BOT
 import (
 	"errors"
 	"log"
+	"neko-bot/DB"
+	"neko-bot/MSG"
 	"strconv"
 	"strings"
 )
@@ -24,56 +26,60 @@ func help() command {
 	return command{name: "neko!help", code: 3}
 }
 
-const (
-	NoErrorCode int = 0
-	ErrorCode   int = -1
-)
-
-func printHelp() string {
-	msg := "Hey, let me help you! Here are my commands:\n"
-	msg += "JOBS: neko!jobs N String\n"
-	msg += "PROJECT: neko!project String\n"
-	return msg
-}
-
-func ParseCommand(str string) []string {
+func ParseCommand(str string, username string) []MSG.Message {
 	commandArray := strings.SplitN(str, " ", 2)
 
 	code, err := parseCommandKind(commandArray[0])
 
 	if err != nil || len(commandArray) == 1 {
 		log.Print(err)
-		if code != NoErrorCode {
-			msg := printHelp()
-			return []string{msg}
+		if code != MSG.NoErrorCode {
+			return []MSG.Message{{Kind: MSG.Help}}
 		}
 	} else {
-		if code != NoErrorCode {
-			return executeCommand(code, commandArray[1])
+		if code != MSG.NoErrorCode {
+			return executeCommand(code, commandArray[1], username)
 		} else {
-			return []string{}
+			return []MSG.Message{}
 		}
 	}
-	return []string{}
+	return []MSG.Message{}
 }
 
-func executeCommand(code int, args string) []string {
+// neko!project list
+// neko!project add string
+// neko!project deleteIdea string
+// neko!project deleteId id
+
+func executeCommand(code int, args string, username string) []MSG.Message {
 	switch code {
 	case jobSearch().code:
 		jobArgs := strings.SplitN(args, " ", 2)
 		howMany, err := strconv.Atoi(jobArgs[0])
 		if err != nil {
 			log.Print(err)
-			return []string{}
+			return []MSG.Message{}
 		} else {
 			return HackerNewsJobs(jobArgs[1], howMany)
 		}
 	case storeProjectIdea().code:
-		return []string{"TODO: store the ideas in the database"}
+		projectArgs := strings.SplitN(args, " ", 2)
+		switch projectArgs[0] {
+		case MSG.ProjectAdd:
+			return DB.CreateIdea(projectArgs, username)
+		case MSG.ProjectDeleteId:
+			return DB.DeleteById(projectArgs)
+		case MSG.ProjectDeleteIdea:
+			return DB.DeleteByIdea(projectArgs)
+		case MSG.ProjectList:
+			return DB.GetIdeas()
+		default:
+			return []MSG.Message{{Body: "Invalid operation for project!", Kind: MSG.Error}}
+		}
 	case help().code:
-		return []string{printHelp()}
+		return []MSG.Message{{Kind: MSG.Help}}
 	}
-	return []string{}
+	return []MSG.Message{}
 }
 
 func parseCommandKind(kind string) (int, error) {
@@ -86,9 +92,9 @@ func parseCommandKind(kind string) (int, error) {
 		return help().code, nil
 	default:
 		if strings.Contains(kind, "neko!") {
-			return ErrorCode, errors.New("Invalid command name!")
+			return MSG.ErrorCode, errors.New("Invalid command name!")
 		} else {
-			return NoErrorCode, nil
+			return MSG.NoErrorCode, nil
 		}
 
 	}
