@@ -17,7 +17,6 @@ type ProjectIdea struct {
 var ConnStr string
 
 func connectToDB() *gorm.DB {
-	// Connect to database
 	db, err := gorm.Open(postgres.Open(ConnStr), &gorm.Config{})
 	if err != nil {
 		panic("Failed to connect database")
