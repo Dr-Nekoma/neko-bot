@@ -1,0 +1,23 @@
+{
+    "name": "neko-bot",
+    "description": "Dr.Nekoma's BOT",
+    "keywords": [
+      "postgresql",
+      "queue",
+      "go"
+    ],
+    "buildpacks":[
+      {"url":"https://github.com/heroku/heroku-buildpack-addon-wait.git"},
+      {"url":"heroku/go"}
+    ],
+    "website": "https://github.com/Dr-Nekoma/neko-bot",
+    "repository": "https://github.com/Dr-Nekoma/neko-bot",
+    "addons": [
+      "heroku-postgresql"
+    ],
+    "formation":{
+      "worker":{
+        "quantity":1
+      }
+    }
+  }
