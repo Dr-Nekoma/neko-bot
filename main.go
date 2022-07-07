@@ -8,7 +8,6 @@ import (
 	"neko-bot/MSG"
 	"os"
 	"os/signal"
-	"strings"
 	"syscall"
 
 	discord "github.com/bwmarrin/discordgo"
@@ -36,10 +35,6 @@ func init() {
 		DB.ConnStr = goDotEnvVariable("URI")
 	}
 
-	port := os.Getenv("$PORT")
-	if port != "" {
-		DB.ConnStr = strings.Replace(DB.ConnStr, goDotEnvVariable("PORT"), port, 1)
-	}
 }
 
 var botToken string
