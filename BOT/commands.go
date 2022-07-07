@@ -46,11 +46,6 @@ func ParseCommand(str string, username string) []MSG.Message {
 	return []MSG.Message{}
 }
 
-// neko!project list
-// neko!project add string
-// neko!project deleteIdea string
-// neko!project deleteId id
-
 func executeCommand(code int, args string, username string) []MSG.Message {
 	switch code {
 	case jobSearch().code:

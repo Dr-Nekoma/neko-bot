@@ -30,6 +30,7 @@ const (
 	ProjectDeleteIdea string = "deleteIdea"
 	ProjectDeleteId   string = "deleteId"
 	Help              string = "help"
+	Authorship        string = "Made by Dr.Nekoma"
 )
 
 func LackOfJobsMessage() *discord.MessageEmbed {
@@ -38,7 +39,7 @@ func LackOfJobsMessage() *discord.MessageEmbed {
 		Type:  "article",
 		Color: 0x00acd7,
 		Footer: &discord.MessageEmbedFooter{
-			Text: "Made by Dr.Nekoma",
+			Text: Authorship,
 		},
 		Description: "I couldn't find any jobs with this key sentence!",
 	}
@@ -58,7 +59,7 @@ func HelpMessage(descr string) *discord.MessageEmbed {
 		Type:  "article",
 		Color: 0x00acd7,
 		Footer: &discord.MessageEmbedFooter{
-			Text: "Made by Dr.Nekoma",
+			Text: Authorship,
 		},
 		Description: "Hey, let me help you! Here are my commands:",
 		Fields: []*discord.MessageEmbedField{
@@ -84,7 +85,7 @@ func ErrorMessage(descr string) *discord.MessageEmbed {
 		Type:  "article",
 		Color: 0xff0000,
 		Footer: &discord.MessageEmbedFooter{
-			Text: "Made by Dr.Nekoma",
+			Text: Authorship,
 		},
 		Description: descr,
 	}
@@ -96,7 +97,7 @@ func ProjectAddMessage(msg Message, author string) *discord.MessageEmbed {
 		Type:  "article",
 		Color: 0x00acd7,
 		Footer: &discord.MessageEmbedFooter{
-			Text: "Made by Dr.Nekoma",
+			Text: Authorship,
 		},
 		Description: msg.Body,
 		Fields: []*discord.MessageEmbedField{
@@ -118,7 +119,7 @@ func ProjectEmptyListMessage() *discord.MessageEmbed {
 		Type:  "article",
 		Color: 0x00acd7,
 		Footer: &discord.MessageEmbedFooter{
-			Text: "Made by Dr.Nekoma",
+			Text: Authorship,
 		},
 		Description: "There aren't any ideas saved!",
 	}
@@ -130,7 +131,7 @@ func ProjectListMessage(msg Message) *discord.MessageEmbed {
 		Type:  "article",
 		Color: 0x00acd7,
 		Footer: &discord.MessageEmbedFooter{
-			Text: "Made by Dr.Nekoma",
+			Text: Authorship,
 		},
 		Description: msg.Body,
 		Fields: []*discord.MessageEmbedField{
@@ -157,7 +158,7 @@ func ProjectDeleteIdMessage(msg Message, author string) *discord.MessageEmbed {
 		Type:  "article",
 		Color: 0x00acd7,
 		Footer: &discord.MessageEmbedFooter{
-			Text: "Made by Dr.Nekoma",
+			Text: Authorship,
 		},
 		Description: msg.Body,
 		Fields: []*discord.MessageEmbedField{
@@ -179,7 +180,7 @@ func ProjectDeleteIdeaMessage(msg Message, author string) *discord.MessageEmbed 
 		Type:  "article",
 		Color: 0x00acd7,
 		Footer: &discord.MessageEmbedFooter{
-			Text: "Made by Dr.Nekoma",
+			Text: Authorship,
 		},
 		Description: msg.Body,
 		Fields: []*discord.MessageEmbedField{
@@ -202,7 +203,7 @@ func JobMessage(titleLink string, descr string) *discord.MessageEmbed {
 		Type:  "article",
 		Color: 0x00acd7,
 		Footer: &discord.MessageEmbedFooter{
-			Text: "Made by Dr.Nekoma",
+			Text: Authorship,
 		},
 		Image: &discord.MessageEmbedImage{
 			URL: "https://jayclouse.com/wp-content/uploads/2019/06/hacker_news-1000x525-1.jpg",
