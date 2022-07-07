@@ -49,6 +49,7 @@ func main() {
 	}
 
 	dg.AddHandler(messageCreate)
+	dg.UpdateListeningStatus("Listening to **neko!help**")
 
 	dg.Identify.Intents = discord.IntentsGuildMessages
 
