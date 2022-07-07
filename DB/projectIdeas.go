@@ -3,6 +3,7 @@ package DB
 import (
 	"fmt"
 	"neko-bot/MSG"
+	"strconv"
 
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
@@ -79,7 +80,8 @@ func DeleteById(args []string) []MSG.Message {
 		return []MSG.Message{{Body: "There isn't an idea with this ID to be deleted!", Kind: MSG.Error}}
 	}
 
-	return []MSG.Message{{Body: fmt.Sprintf("Idea with ID %s has been deleted!", id), Kind: MSG.Project, SubKind: MSG.ProjectDeleteId}}
+	numId, _ := strconv.Atoi(id)
+	return []MSG.Message{{Body: fmt.Sprintf("Idea with ID %s has been deleted!", id), Kind: MSG.Project, SubKind: MSG.ProjectDeleteId, IdeaID: uint(numId)}}
 }
 
 func DeleteByIdea(args []string) []MSG.Message {

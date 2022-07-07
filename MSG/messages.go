@@ -185,10 +185,6 @@ func ProjectDeleteIdeaMessage(msg Message, author string) *discord.MessageEmbed 
 		Description: msg.Body,
 		Fields: []*discord.MessageEmbedField{
 			{
-				Name:  "Idea ID",
-				Value: fmt.Sprint(msg.IdeaID),
-			},
-			{
 				Name:  "Deleted by",
 				Value: author,
 			},
