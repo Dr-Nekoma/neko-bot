@@ -46,8 +46,8 @@ func HackerNewsJobs(keySentence string, howMany int) []MSG.Message {
 	}
 
 	chAPI := make(chan int)
-	chTrs := make(chan comment, 25)
-	chStr := make(chan comment, 50)
+	chTrs := make(chan comment, 500)
+	chStr := make(chan comment, 500)
 	doneStr := make(chan bool)
 	doneTrs := make(chan bool)
 	doneCnt := make(chan bool)
@@ -73,6 +73,7 @@ func HackerNewsJobs(keySentence string, howMany int) []MSG.Message {
 				}
 				chTrs <- comment{body: content, url: commentURL + fmt.Sprint(id)}
 			}
+
 		}()
 	}
 

@@ -2,6 +2,7 @@ package MSG
 
 import (
 	"fmt"
+	"math"
 	"time"
 
 	discord "github.com/bwmarrin/discordgo"
@@ -204,6 +205,6 @@ func JobMessage(titleLink string, descr string) *discord.MessageEmbed {
 		Image: &discord.MessageEmbedImage{
 			URL: "https://jayclouse.com/wp-content/uploads/2019/06/hacker_news-1000x525-1.jpg",
 		},
-		Description: descr,
+		Description: descr[:(uint(math.Min(float64(len(descr)), float64(4096))))],
 	}
 }

@@ -51,7 +51,7 @@ func executeCommand(code int, args string, username string) []MSG.Message {
 	case jobSearch().code:
 		jobArgs := strings.SplitN(args, " ", 2)
 		howMany, err := strconv.Atoi(jobArgs[0])
-		if err != nil {
+		if err != nil || howMany <= 0 || len(jobArgs) < 2 {
 			log.Print(err)
 			return []MSG.Message{{Body: "Only small positive numbers are valid!", Kind: MSG.Error}}
 		} else {
