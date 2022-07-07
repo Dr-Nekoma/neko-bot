@@ -38,7 +38,7 @@ func init() {
 		DB.ConnStr = goDotEnvVariable("URI")
 	}
 
-	port := os.Getenv("PORT")
+	port := os.Getenv("$PORT")
 	if port != "" {
 		strings.Replace(DB.ConnStr, goDotEnvVariable("PORT"), port, 1)
 	}
