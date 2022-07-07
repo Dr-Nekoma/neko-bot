@@ -8,6 +8,7 @@ import (
 	"neko-bot/MSG"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 
 	discord "github.com/bwmarrin/discordgo"
@@ -35,6 +36,11 @@ func init() {
 	DB.ConnStr = os.Getenv("DATABASE_URL")
 	if DB.ConnStr == "" {
 		DB.ConnStr = goDotEnvVariable("URI")
+	}
+
+	port := os.Getenv("PORT")
+	if port != "" {
+		strings.Replace(DB.ConnStr, goDotEnvVariable("PORT"), port, 1)
 	}
 }
 
