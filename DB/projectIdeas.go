@@ -60,7 +60,7 @@ func CreateIdea(args []string, author string) []MSG.Message {
 	if result.Error != nil {
 		return []MSG.Message{{Body: "I got an error trying to add an idea!", Kind: MSG.Error}}
 	}
-	return []MSG.Message{{Body: fmt.Sprintf("Idea '%s' by %s has been created!", idea, author), Kind: MSG.Project, SubKind: MSG.ProjectAdd}}
+	return []MSG.Message{{Body: fmt.Sprintf("Idea '%s' by %s has been created!", idea, author), Kind: MSG.Project, SubKind: MSG.ProjectAdd, IdeaID: record.ID}}
 }
 
 func DeleteById(args []string) []MSG.Message {
