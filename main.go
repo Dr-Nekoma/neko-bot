@@ -49,13 +49,18 @@ func main() {
 	}
 
 	dg.AddHandler(messageCreate)
-	dg.UpdateListeningStatus("**neko!help**")
 
 	dg.Identify.Intents = discord.IntentsGuildMessages
 
 	err = dg.Open()
 	if err != nil {
 		fmt.Println("error opening connection,", err)
+		return
+	}
+
+	err = dg.UpdateListeningStatus("neko!help")
+	if err != nil {
+		fmt.Println("error with status,", err)
 		return
 	}
 
