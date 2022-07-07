@@ -53,7 +53,7 @@ func executeCommand(code int, args string, username string) []MSG.Message {
 		howMany, err := strconv.Atoi(jobArgs[0])
 		if err != nil {
 			log.Print(err)
-			return []MSG.Message{}
+			return []MSG.Message{{Body: "Only small positive numbers are valid!", Kind: MSG.Error}}
 		} else {
 			return HackerNewsJobs(jobArgs[1], howMany)
 		}

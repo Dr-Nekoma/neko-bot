@@ -35,14 +35,14 @@ func HackerNewsJobs(keySentence string, howMany int) []MSG.Message {
 
 	if err != nil {
 		log.Print(err)
-		return []MSG.Message{{Body: err.Error(), Kind: "error"}}
+		return []MSG.Message{{Body: err.Error(), Kind: MSG.Error}}
 	}
 
 	post, err := querySubmissionAPI(id)
 
 	if err != nil {
 		log.Print(err)
-		return []MSG.Message{{Body: err.Error(), Kind: "error"}}
+		return []MSG.Message{{Body: err.Error(), Kind: MSG.Error}}
 	}
 
 	chAPI := make(chan int)
@@ -79,7 +79,7 @@ func HackerNewsJobs(keySentence string, howMany int) []MSG.Message {
 	go func() {
 		fmt.Println("Adding to storage")
 		for resp := range chStr {
-			childSelectedRes = append(childSelectedRes, MSG.Message{Body: resp.body.Text, TitleLink: resp.url, Kind: "jobs"})
+			childSelectedRes = append(childSelectedRes, MSG.Message{Body: resp.body.Text, TitleLink: resp.url, Kind: MSG.Jobs})
 		}
 		close(doneStr)
 	}()
@@ -118,7 +118,7 @@ func HackerNewsJobs(keySentence string, howMany int) []MSG.Message {
 
 	fmt.Println(len(childSelectedRes))
 	if len(childSelectedRes) == 0 {
-		return []MSG.Message{{Kind: "lackOfJobs"}}
+		return []MSG.Message{{Kind: MSG.LackOfJobs}}
 	} else {
 		return childSelectedRes
 	}
