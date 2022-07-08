@@ -80,7 +80,9 @@ func messageCreate(s *discord.Session, m *discord.MessageCreate) {
 	}
 
 	messages := BOT.ParseCommand(m.Content, m.Author.Username)
-	fmt.Print(messages)
+	if len(messages) == 0 {
+		return
+	}
 	if messages[0].Kind == MSG.Project && messages[0].SubKind == MSG.ProjectList {
 		msg, _ := s.ChannelMessageSend(m.ChannelID, ("Hey " + m.Author.Mention() + "!"))
 		ch, err := s.MessageThreadStart(m.ChannelID, msg.ID, MSG.ProjectListTitle, 60)
