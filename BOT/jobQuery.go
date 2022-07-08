@@ -98,6 +98,9 @@ func HackerNewsJobs(keySentence string, howMany int) []MSG.Message {
 				chStr <- child
 			}
 		}
+		if atomic.LoadUint64(&requests) == 0 {
+			close(doneCnt)
+		}
 		close(doneTrs)
 	}()
 

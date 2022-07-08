@@ -80,19 +80,41 @@ func messageCreate(s *discord.Session, m *discord.MessageCreate) {
 	}
 
 	messages := BOT.ParseCommand(m.Content, m.Author.Username)
+	fmt.Print(messages)
+	if messages[0].Kind == MSG.Project && messages[0].SubKind == MSG.ProjectList {
+		msg, _ := s.ChannelMessageSend(m.ChannelID, ("Hey " + m.Author.Mention() + "!"))
+		ch, err := s.MessageThreadStart(m.ChannelID, msg.ID, MSG.ProjectListTitle, 60)
+		if err != nil {
+			s.ChannelMessageSendEmbed(m.ChannelID, MSG.ErrorMessage("I couldn't create a thread for projects!"))
+			return
+		}
+		for i := 0; i < len(messages); i++ {
+			s.ChannelMessageSendEmbed(ch.ID, MSG.ProjectListMessage(messages[i]))
+		}
+		return
+	}
+	if messages[0].Kind == MSG.Jobs {
+		msg, _ := s.ChannelMessageSend(m.ChannelID, ("Hey " + m.Author.Mention() + "!"))
+		ch, err := s.MessageThreadStart(m.ChannelID, msg.ID, MSG.JobsTitle, 1440)
+		if err != nil {
+			s.ChannelMessageSendEmbed(m.ChannelID, MSG.ErrorMessage("I couldn't create a thread for jobs!"))
+			return
+		}
+		for i := 0; i < len(messages); i++ {
+			s.ChannelMessageSendEmbed(ch.ID, MSG.JobMessage(messages[i].TitleLink, messages[i].Body))
+		}
+		return
+	}
+
 	for i := 0; i < len(messages); i++ {
 		message := messages[i]
 		switch message.Kind {
-		case MSG.Jobs:
-			s.ChannelMessageSendEmbed(m.ChannelID, MSG.JobMessage(messages[i].TitleLink, messages[i].Body))
 		case MSG.LackOfJobs:
 			s.ChannelMessageSendEmbed(m.ChannelID, MSG.LackOfJobsMessage())
 		case MSG.Project:
 			switch message.SubKind {
 			case MSG.ProjectAdd:
 				s.ChannelMessageSendEmbed(m.ChannelID, MSG.ProjectAddMessage(messages[i], m.Author.Username))
-			case MSG.ProjectList:
-				s.ChannelMessageSendEmbed(m.ChannelID, MSG.ProjectListMessage(messages[i]))
 			case MSG.ProjectEmptyList:
 				s.ChannelMessageSendEmbed(m.ChannelID, MSG.ProjectEmptyListMessage())
 			case MSG.ProjectDeleteId:

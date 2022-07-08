@@ -22,9 +22,11 @@ const (
 	NoErrorCode       int    = 0
 	ErrorCode         int    = -1
 	Error             string = "error"
+	JobsTitle         string = "I found something for you!"
 	Jobs              string = "jobs"
 	LackOfJobs        string = "lackOfJobs"
 	Project           string = "project"
+	ProjectListTitle  string = "Here are the project ideas that we have!"
 	ProjectList       string = "list"
 	ProjectEmptyList  string = "emptyList"
 	ProjectAdd        string = "add"

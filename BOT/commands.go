@@ -51,12 +51,15 @@ func executeCommand(code int, args string, username string) []MSG.Message {
 	case jobSearch().code:
 		jobArgs := strings.SplitN(args, " ", 2)
 		howMany, err := strconv.Atoi(jobArgs[0])
-		if err != nil || howMany <= 0 || len(jobArgs) < 2 {
+		if err != nil || howMany <= 0 {
 			log.Print(err)
 			return []MSG.Message{{Body: "Only small positive numbers are valid!", Kind: MSG.Error}}
-		} else {
-			return HackerNewsJobs(jobArgs[1], howMany)
 		}
+		if len(jobArgs) < 2 {
+			log.Print(err)
+			return []MSG.Message{{Body: "You forgot the key sentence!", Kind: MSG.Error}}
+		}
+		return HackerNewsJobs(jobArgs[1], howMany)
 	case storeProjectIdea().code:
 		projectArgs := strings.SplitN(args, " ", 2)
 		switch projectArgs[0] {
