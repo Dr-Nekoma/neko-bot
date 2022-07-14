@@ -56,6 +56,14 @@ func projectIdeaHelpMessage() string {
 	return msg
 }
 
+func convertToBRTimeZone(t time.Time) time.Time {
+	location, err := time.LoadLocation("America/Sao_Paulo")
+	if err != nil {
+		panic(err)
+	}
+	return t.In(location)
+}
+
 func HelpMessage(descr string) *discord.MessageEmbed {
 	return &discord.MessageEmbed{
 		Title: "Help | Commands",
@@ -76,7 +84,7 @@ func HelpMessage(descr string) *discord.MessageEmbed {
 			},
 			{
 				Name:  "Help",
-				Value: "neko!help",
+				Value: "neko!help || neko!",
 			},
 		},
 	}
@@ -149,7 +157,7 @@ func ProjectListMessage(msg Message) *discord.MessageEmbed {
 			{
 
 				Name:  "Created At",
-				Value: msg.CreatedAt.Format("2006-01-02 15:04"),
+				Value: convertToBRTimeZone(msg.CreatedAt).Format("15:04 | 02-Jan-2006"),
 			},
 		},
 	}
