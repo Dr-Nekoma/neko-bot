@@ -57,8 +57,8 @@ func HackerNewsJobs(keySentence string, howMany int) []MSG.Message {
 	var requests uint64
 
 	for i := 0; i < 20; i++ {
+		wg.Add(1)
 		go func() {
-			wg.Add(1)
 			defer wg.Done()
 			fmt.Println("Waiting for ID")
 			for id := range chAPI {
